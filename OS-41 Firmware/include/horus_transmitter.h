@@ -8,7 +8,7 @@ uint16_t packet_count = 1;  // Packet counter
 
 //Variables for GPS reading
 
-volatile bool gps_valid = false; //Should be false
+volatile bool gps_valid = true; //Should be false, true for testing radio (immediate transmit)
 float latitude = 0.0;
 float longitude = 0.0;
 uint16_t altitude = 0;

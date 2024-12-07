@@ -18,7 +18,7 @@
 Si4432 radio = new Module(15,4,16);
 
 #define TX_FREQ         434.600
-#define FSK4_BAUD       300
+#define FSK4_BAUD       100
 #define FSK4_SPACING    624    // NOTE: This results in a shift of 312 due to PLL resolution of the Si4432. Resolution is 156Hz
 
 //Correction coeffecients
@@ -31,6 +31,11 @@ TinyGPSPlus gps;
 ESP8266Timer ITimer;
 
 volatile bool readGPS = false; //Are we reading the GPS?
+
+//GPS commands
+
+const char GPS_HAB[] = "$PCAS11,5*18\r\n"; //Set high altitude mode
+const char GPS_DISABLE[] = "$PCAS04,1*18\r\n"; //Set GPS-only mode (no BeiDou)
 
 
 void IRAM_ATTR TimerHandler(){ //Timer interrupt for reading GPS. IRAM_ATTR indicates that it is stored in RAM for quick execution
@@ -56,13 +61,14 @@ void IRAM_ATTR TimerHandler(){ //Timer interrupt for reading GPS. IRAM_ATTR indi
   }
 }
 
+
 void setup() {
   Serial.begin(9600);
   SPI.pins(14,12,13,15); //Set the SPI pins
   SPI.begin(); //Begin SPI
 
   radio.begin(); //Begin radio
-  radio.setOutputPower(20); //20dBm = 100mW, 17dBm = 50mw
+  radio.setOutputPower(10); //20dBm = 100mW, 17dBm = 50mw
   fsk4_setup(&radio, TX_FREQ, FSK4_SPACING, FSK4_BAUD);
   fsk4_correction(correction); //Apply correction
   pinMode(2,OUTPUT);
