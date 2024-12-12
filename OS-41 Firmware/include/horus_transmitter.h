@@ -4,11 +4,11 @@
 // Buffers and counters.
 char rawbuffer [128];   // Buffer to temporarily store a raw binary packet.
 char codedbuffer [128]; // Buffer to store an encoded binary packet
-uint16_t packet_count = 1;  // Packet counter
+uint16_t packet_count = 0;  // Packet counter
 
 //Variables for GPS reading
 
-volatile bool gps_valid = true; //Should be false, true for testing radio (immediate transmit)
+volatile bool gps_valid = false; //Should be false, true for testing radio (immediate transmit)
 float latitude = 0.0;
 float longitude = 0.0;
 uint16_t altitude = 0;
@@ -17,6 +17,15 @@ uint8_t time_minute = 0;
 uint8_t time_second = 0;
 uint8_t sats = 0;
 uint16_t speed = 0;
+
+
+uint8_t convertToSondeHub(uint16_t adcReading){
+  //This function takes in an input voltage and converts it to a range of 0-255 matching 0-5V to be sondehub compatible
+  float inputVoltage = adcReading * (3.3 / 1023.0);
+  float ratio = inputVoltage/5.0;
+  uint8_t sondehubrange = round(ratio*255.0);
+  return sondehubrange;
+}
 
 // Horus v2 Mode 1 (32-byte) Binary Packet
 struct HorusBinaryPacketV2
@@ -58,14 +67,14 @@ int build_horus_binary_packet_v2(char *buffer){
   BinaryPacketV2.Longitude = longitude;
   BinaryPacketV2.Altitude = altitude;
   BinaryPacketV2.Speed = speed;
-  BinaryPacketV2.BattVoltage = analogRead(A0);
+  BinaryPacketV2.BattVoltage = convertToSondeHub(analogRead(A0));
   BinaryPacketV2.Sats = sats;
-  BinaryPacketV2.Temp = 0;
+  BinaryPacketV2.Temp = (int8)temperature;
   // Custom section. This is an example only, and the 9 bytes in this section can be used in other
   // ways. Refer here for details: https://github.com/projecthorus/horusdemodlib/wiki/5-Customising-a-Horus-Binary-v2-Packet
   BinaryPacketV2.dummy1 = 0;        // uint8
   BinaryPacketV2.dummy2 = 0.0;  // float32
-  BinaryPacketV2.dummy3 = 0;      // uint8 - interpreted as a battery voltage 0-5V
+  BinaryPacketV2.dummy3 = convertToSondeHub(analogRead(A0));      // uint8 - interpreted as a battery voltage 0-5V
   BinaryPacketV2.dummy4 = 0;      // uint8 - interpreted as a fixed-point value (div/10)
   BinaryPacketV2.dummy5 = 0;     // uint16 - interpreted as a fixed-point value (div/100)
 
