@@ -10,6 +10,7 @@
 #include "crc16.h"
 #include "horus_l2.h"
 #include "horus_transmitter.h"
+#include "ascent.h"
 #include "4fsk.h"
 
 //The Si4432 has the following connections:
@@ -48,8 +49,6 @@ int gps_counter = 0;
 
 //FSK4Client fsk4(&radio);
 
-
-
 void IRAM_ATTR TimerHandler(){ //Timer interrupt for reading GPS. IRAM_ATTR indicates that it is stored in RAM for quick execution
   gps_counter++;
   if (gps_counter % 40 == 0){
@@ -60,6 +59,9 @@ void IRAM_ATTR TimerHandler(){ //Timer interrupt for reading GPS. IRAM_ATTR indi
     if(gps.encode(NMEA_data)){
       readGPS = true;
       if (gps.location.isValid()){
+        //Quick intervention for ascent rate calculation: store current altitude and last altitude
+        altitude_previous = altitude;
+
         gps_valid = true;
         latitude = gps.location.lat();
         longitude = gps.location.lng();
@@ -69,6 +71,12 @@ void IRAM_ATTR TimerHandler(){ //Timer interrupt for reading GPS. IRAM_ATTR indi
         time_second = gps.time.second();
         sats = gps.satellites.value();
         speed = gps.speed.knots();
+
+        //For ascent rate calculation: if we have enough gps positions (counter > 2), call update rates
+
+        if (packet_count > 2){
+          updateRates();
+        }
 
     }
 
@@ -90,7 +98,6 @@ void setupRadio(){
     state = radio.setOutputPower(TX_POWER);
     Serial.println(state);
   }
-  Serial.println("radio Init success!");
   fsk4_setup(&radio, TX_FREQ, FSK4_SPACING, FSK4_BAUD);
   fsk4_correction(correction); //Apply correction
 }
@@ -98,19 +105,15 @@ void setupRadio(){
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Start");
   pinMode(A0,INPUT);
   setupRadio();
-  Serial.println("SetupRadio()");
   pinMode(2,OUTPUT);
   digitalWrite(2,HIGH); //LED off (inverted logic)
 
   //Start the GPS ISR
   ITimer.attachInterruptInterval(TIMER_INTERVAL_MS * 1000, TimerHandler);
-  Serial.println("SetupInterval");
 
   beginSensors();
-  Serial.println("BeginSensors");
 
   pinMode(2,OUTPUT);
 }
@@ -118,24 +121,23 @@ void setup() {
 int counter_reset = 0;
 
 void loop() {
-  Serial.println("HEAP:");
-  Serial.println(ESP.getFreeHeap());
-  Serial.println("");
   counter_reset++;
   if (counter_reset % RESET_PACKETS == 0){
     radio.reset();
     SPI.end(); //End SPI
     setupRadio(); //Prevent radio bricks and restart SPI bus
   }
-  requestTemperatures();
   if (gps_valid){
     digitalWrite(2,LOW);
+    readTemperatures(); //Read temperatures recorded from last time
     //Transmit packet
     // send some bytes as a preamble
     int pkt_len = build_horus_binary_packet_v2(rawbuffer);
     int coded_len = horus_l2_encode_tx_packet((unsigned char*)codedbuffer, (unsigned char*)rawbuffer, pkt_len);
 
     //Write preamble to ensure sync 
+
+    requestTemperatures(); //First request temperatures for next time, then transmit
 
     fsk4_preamble(&radio, 8);
     fsk4_write(&radio, codedbuffer, coded_len);

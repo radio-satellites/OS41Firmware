@@ -17,11 +17,15 @@ uint8_t time_minute = 0;
 uint8_t time_second = 0;
 uint8_t sats = 0;
 uint16_t speed = 0;
+int16_t ascentRate = 0; //NOTE: this is multiplied by 100
 
+#define VOLTAGE_BIAS    0.0 //Static voltage bias in ADC.
+#define ADC_BIAS        0.0 //Voltage divider bias on the ADC
 
 uint8_t convertToSondeHub(uint16_t adcReading){
   //This function takes in an input voltage and converts it to a range of 0-255 matching 0-5V to be sondehub compatible
-  float inputVoltage = adcReading * (3.3 / 1023.0);
+  float inputVoltage = adcReading * ((3.3+ADC_BIAS) / 1023.0);
+  inputVoltage = inputVoltage - VOLTAGE_BIAS;
   float ratio = inputVoltage/5.0;
   uint8_t sondehubrange = round(ratio*255.0);
   return sondehubrange;
@@ -44,11 +48,12 @@ struct HorusBinaryPacketV2
     uint8_t     BattVoltage; // 0 = 0v, 255 = 5.0V, linear steps in-between.
     // The following 9 bytes (up to the CRC) are user-customizable. The following just
     // provides an example of how they could be used.
-    uint8_t     dummy1;      // unsigned int
-    float     dummy2;       // Float 
-    uint8_t     dummy3;     // battery voltage test
-    uint8_t     dummy4;     // divide by 10
-    uint16_t     dummy5;    // divide by 100
+    int16_t AscentRate; // Divide by 100
+    int16_t ExtTemp; // Divide by 10
+    uint8_t Humidity; // No post-processing
+    uint16_t ExtPress; // Divide by 10
+    uint8_t dummy1;
+    uint8_t dummy2;
     uint16_t    Checksum;    // CRC16-CCITT Checksum.
 }  __attribute__ ((packed));
 
@@ -72,12 +77,14 @@ int build_horus_binary_packet_v2(char *buffer){
   BinaryPacketV2.Temp = (int8)temperature;
   // Custom section. This is an example only, and the 9 bytes in this section can be used in other
   // ways. Refer here for details: https://github.com/projecthorus/horusdemodlib/wiki/5-Customising-a-Horus-Binary-v2-Packet
-  BinaryPacketV2.dummy1 = 0;        // uint8
-  BinaryPacketV2.dummy2 = 0.0;  // float32
-  BinaryPacketV2.dummy3 = convertToSondeHub(analogRead(A0));      // uint8 - interpreted as a battery voltage 0-5V
-  BinaryPacketV2.dummy4 = 0;      // uint8 - interpreted as a fixed-point value (div/10)
-  BinaryPacketV2.dummy5 = 0;     // uint16 - interpreted as a fixed-point value (div/100)
-
+  
+  BinaryPacketV2.AscentRate = ascentRate;        // interpreted as ascent rate divided by 100
+  BinaryPacketV2.ExtTemp = 0;
+  BinaryPacketV2.ExtPress = 0;
+  BinaryPacketV2.Humidity = 0;
+  BinaryPacketV2.dummy1 = 0;
+  BinaryPacketV2.dummy2 = 0;
+  
   BinaryPacketV2.Checksum = (uint16_t)crc16((unsigned char *)&BinaryPacketV2, sizeof(BinaryPacketV2) - 2);
 
 
