@@ -10,7 +10,7 @@
 #include "crc16.h"
 #include "horus_l2.h"
 #include "horus_transmitter.h"
-#include "ascent.h"
+//#include "ascent.h"
 #include "4fsk.h"
 
 //The Si4432 has the following connections:
@@ -60,7 +60,7 @@ void IRAM_ATTR TimerHandler(){ //Timer interrupt for reading GPS. IRAM_ATTR indi
       readGPS = true;
       if (gps.location.isValid()){
         //Quick intervention for ascent rate calculation: store current altitude and last altitude
-        altitude_previous = altitude;
+        //altitude_previous = altitude;
 
         gps_valid = true;
         latitude = gps.location.lat();
@@ -74,9 +74,9 @@ void IRAM_ATTR TimerHandler(){ //Timer interrupt for reading GPS. IRAM_ATTR indi
 
         //For ascent rate calculation: if we have enough gps positions (counter > 2), call update rates
 
-        if (packet_count > 2){
-          updateRates();
-        }
+        //if (packet_count > 2){
+        //  updateRates();
+        //}
 
     }
 

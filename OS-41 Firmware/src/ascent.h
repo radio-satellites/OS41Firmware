@@ -10,7 +10,7 @@ int verticalVel[4] = {0,0,0,0}; //Buffer to store velocities for averaging
 
 int currentAscentRate = 0;
 
-float IRAM_ATTR average (int * array, int len){
+float IRAM_ATTR average(int * array, int len){
   long sum = 0L; 
   for (int i = 0 ; i < len ; i++)
     sum += array [i];
@@ -25,7 +25,6 @@ void IRAM_ATTR updateRates(){
     verticalVel[1] = verticalVel[2];
     verticalVel[2] = verticalVel[3];
     verticalVel[3] = currentAscentRate;
-
     //Average array and multiply by 100 (to suit sondehub), then write it to the current value of ascentRate
     ascentRate = average(verticalVel,4)*100;
 }

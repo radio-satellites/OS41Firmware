@@ -19,8 +19,8 @@ uint8_t sats = 0;
 uint16_t speed = 0;
 int16_t ascentRate = 0; //NOTE: this is multiplied by 100
 
-#define VOLTAGE_BIAS    0.0 //Static voltage bias in ADC.
-#define ADC_BIAS        0.0 //Voltage divider bias on the ADC
+#define VOLTAGE_BIAS    0.4 //Static voltage (over)bias in ADC.
+#define ADC_BIAS        0.0 //Voltage divider (under)bias on the ADC
 
 uint8_t convertToSondeHub(uint16_t adcReading){
   //This function takes in an input voltage and converts it to a range of 0-255 matching 0-5V to be sondehub compatible
