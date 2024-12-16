@@ -25,7 +25,9 @@ int16_t ascentRate = 0; //NOTE: this is multiplied by 100
 uint8_t convertToSondeHub(uint16_t adcReading){
   //This function takes in an input voltage and converts it to a range of 0-255 matching 0-5V to be sondehub compatible
   float inputVoltage = adcReading * ((3.3+ADC_BIAS) / 1023.0);
+  Serial.print(inputVoltage);
   inputVoltage = inputVoltage - VOLTAGE_BIAS;
+  Serial.println(inputVoltage);
   float ratio = inputVoltage/5.0;
   uint8_t sondehubrange = round(ratio*255.0);
   return sondehubrange;
