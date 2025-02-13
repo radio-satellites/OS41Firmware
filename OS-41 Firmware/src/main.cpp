@@ -24,7 +24,7 @@ Si4432 radio = new Module(15,4,16);
 #define TX_FREQ         434.600
 #define FSK4_BAUD       100
 #define FSK4_SPACING    624    // NOTE: This results in a shift of 312 or 624 due to PLL resolution of the Si4432. Resolution is 156Hz
-#define TX_POWER        17 //dBm
+#define TX_POWER        10 //dBm
 #define RESET_PACKETS   1 //Reset radio every x packets
 
 //Correction coeffecients
@@ -41,7 +41,7 @@ volatile bool readGPS = false; //Are we reading the GPS?
 //GPS commands
 
 const char GPS_HAB[] = "$PCAS11,5*18\r\n"; //Set high altitude mode
-const char GPS_DISABLE[] = "$PCAS04,1*18\r\n"; //Set GPS-only mode (no BeiDou)
+const char BDS_DISABLE[] = "$PCAS04,1*18\r\n"; //Set GPS-only mode (no BeiDou)
 
 int state; //radio state
 
